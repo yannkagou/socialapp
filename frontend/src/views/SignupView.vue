@@ -24,11 +24,11 @@
                     </div>
                     <div>
                         <label>Password</label><br>
-                        <input v-model="form.password1" type="password" placeholder="Your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
+                        <input v-model="form.password" type="password" placeholder="Your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
                     </div>
                     <div>
-                        <label>Repeat password</label><br>
-                        <input v-model="form.password2" type="password" placeholder="Repeat your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
+                        <label>Confirm password</label><br>
+                        <input v-model="password2" type="password" placeholder="Repeat your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
                     </div>
 
                     <template v-if="errors.length > 0">
@@ -39,6 +39,9 @@
 
                     <div>
                         <button class="py-4 px-6 bg-purple-600 text-white rounded-lg" type="submit">Sign up</button>
+                    </div>
+                    <div v-if="isLoading">
+                        <Yann />
                     </div>
                 </form>
             </div>
@@ -51,13 +54,22 @@
 <script>
 import axios from 'axios';
 import { useToastStore } from '@/stores/toast'
+import { useUserStore } from '@/stores/user'
+import Yann from '../components/Yann.vue';
 
 export default{
 
+    components:{
+            Yann,
+        },
+
     setup(){
         const toastStore = useToastStore()
+        const userStore = useUserStore()
+
         return {
-            toastStore
+            toastStore,
+            userStore,
         }
     },
 
@@ -66,15 +78,20 @@ export default{
             form: {
                 email: '',
                 name: '',
-                password1: '',
-                password2: ''
+                password: '',
             },
+            password2: '',
             errors: [],
+            isLoading: false,
+            logform: {
+                email: '',
+                password: '',
+            },
         }
     },
 
     methods: {
-        submitForm() {
+        async submitForm() {
             this.errors = []
 
             if (this.form.email === '') {
@@ -85,34 +102,55 @@ export default{
                 this.errors.push('Your name is missing')
             }
 
-            if (this.form.password1 === '') {
+            if (this.form.password === '') {
                 this.errors.push('Your password is missing')
             }
 
-            if (this.form.password1 !== this.form.password2) {
+            if (this.form.password !== this.password2) {
                 this.errors.push('The password does not match')
             }
 
             if (this.errors.length === 0) {
-                axios
+                await axios
                     .post('/api/signup/', this.form)
                     .then(response => {
                         console.log(response.data)
-                        if (response.data.message === 'success') {
                             this.toastStore.showToast(5000, 'The user is registered. Please activate your account by clicking your email link.', 'bg-emerald-300')
+                            this.isLoading = true;
 
-                            this.form.email = ''
                             this.form.name = ''
-                            this.form.password1 = ''
-                            this.form.password2 = ''
-                        } else {
-                            const data = JSON.parse(response.data.message)
-                            for (const key in data){
-                                this.errors.push(data[key][0].message)
-                            }
+                            this.password2 = ''
 
-                            this.toastStore.showToast(5000, 'Something went wrong. Please try again', 'bg-red-300')
-                        }
+                            this.logform.email = this.form.email
+                            this.logform.password = this.form.password
+                        })
+                    .catch(error => {
+                        console.log('error', error)
+                    })
+            }
+
+            if (this.errors.length === 0) {
+
+                await axios
+                    .post('/api/login/', this.logform)
+                    .then(response => {
+                    this.userStore.setToken(response.data)
+
+                    axios.defaults.headers.common["Authorization"] = "Bearer " + response.data.access;
+                    })
+                    .catch((error) => {
+                    console.log(error)
+                    })
+            }
+            if (this.errors.length === 0){
+                await axios
+                    .get('/api/meinfo/')
+                    .then(response => {
+                        console.log('api/me', response.data)
+                        this.userStore.setUserInfo(response.data)
+                        this.form.email = '',
+                        this.form.password = '',
+                        this.$router.push('/feed')
                     })
                     .catch(error => {
                         console.log('error', error)
@@ -121,7 +159,11 @@ export default{
         }
   }
 
-    // setup(){
+    
+}
+</script>
+
+// setup(){
     //     const toastStore = useToastStore()
 
         // let form = {
@@ -189,7 +231,3 @@ export default{
         //     showToast,
         // }
     // },
-
-}
-
-</script>

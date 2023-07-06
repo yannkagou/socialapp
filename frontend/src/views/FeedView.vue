@@ -6,6 +6,9 @@
                 <FeedItem :post="post"/>
             </div>
         </div>
+        <div v-else>
+            <h1>NO POSTS FOR THE MOMENT</h1>
+        </div>
 
         <div class="main-right col-span-1 space-y-4">
             <PeopleYouMayKnow/>

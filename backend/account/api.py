@@ -18,16 +18,10 @@ def meinfo(request):
 @authentication_classes([])
 @permission_classes([])
 def signup(request):
-    form = SignupForm(request.data)
-    message = 'success'
-    
-    if form.is_valid():
-        form.save()
-        #Send verification email later!
-    else:
-        message = 'error'
-    
-    return JsonResponse({'message':message})
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return JsonResponse(serializer.data, safe=False)
 
 @api_view(['GET'])
 def friends(request, pk):
@@ -77,3 +71,9 @@ def handle_request(request, status, pk):
     request_user.save()
     
     return JsonResponse({'message': 'friendship request updated'})
+
+@api_view(['GET'])
+def user_list(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return JsonResponse(serializer.data, safe=False)
