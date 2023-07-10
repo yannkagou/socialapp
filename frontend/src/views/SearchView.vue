@@ -17,12 +17,18 @@
                         <p>{{ user.friend_count }} friends</p>
                     </div>
                 </div>
+                <!-- <div v-else>
+                    <h1 class="text-center">NO RESULTS FOR THIS SEARCH</h1>
+                </div> -->
 
                 <div v-if="posts.length" class="space-y-4">
                     <div v-for="post in posts" :key="post.id" class="p-4 bg-white border border-gray-200 rounded-lg">
                         <FeedItem :post="post"/>
                     </div>
                 </div>
+                <!-- <div v-else>
+                    <h1 class="text-center">NO RESULTS FOR THIS SEARCH</h1>
+                </div> -->
                 
             </div>
 

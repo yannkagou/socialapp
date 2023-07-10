@@ -4,6 +4,8 @@ from .forms import SignupForm
 from .models import FriendshipRequest, User
 from .serializers import UserSerializer, FriendshipRequestSerializer
 
+
+
 @api_view(['GET'])
 def meinfo(request):
     user = request.user
@@ -18,10 +20,12 @@ def meinfo(request):
 @authentication_classes([])
 @permission_classes([])
 def signup(request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return JsonResponse(serializer.data, safe=False)
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return JsonResponse(serializer.data, safe=False)
+
+
 
 @api_view(['GET'])
 def friends(request, pk):
@@ -77,3 +81,4 @@ def user_list(request):
     users = User.objects.all()
     serializer = UserSerializer(users, many=True)
     return JsonResponse(serializer.data, safe=False)
+    

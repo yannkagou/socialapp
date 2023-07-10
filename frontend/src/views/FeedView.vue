@@ -6,8 +6,8 @@
                 <FeedItem :post="post"/>
             </div>
         </div>
-        <div v-else>
-            <h1>NO POSTS FOR THE MOMENT</h1>
+        <div v-else  class="main-center col-span-3 space-y-4">
+            <h1 class="text-center">NO POSTS FOR THE MOMENT</h1>
         </div>
 
         <div class="main-right col-span-1 space-y-4">
