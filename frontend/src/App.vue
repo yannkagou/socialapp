@@ -67,15 +67,12 @@
       
     </main>
 
-    <Toast/>
-
   </div>
 </template>
 
 <script setup>
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
-import Toast from '@/components/Toast.vue'
 
   const userStore = useUserStore();
 

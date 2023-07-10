@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="max-w-7xl mx-auto grid grid-cols-2 gap-4">
         <div class="main-left">
             <div class="p-12 bg-white border border-gray-2oo rounded-lg">
@@ -47,6 +47,7 @@
             </div>
 
         </div>
+        <Toast/>
      </div>
   </template> 
 
@@ -56,6 +57,7 @@ import axios from 'axios';
 import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '@/stores/user'
 import Yann from '../components/Yann.vue';
+import Toast from '@/components/Toast.vue'
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -147,73 +149,100 @@ import { useRouter } from 'vue-router';
     }
 
 
-</script>
+</script> -->
 
-// setup(){
-    //     const toastStore = useToastStore()
-
-        // let form = {
-        //         email: '',
-        //         name: '',
-        //         password1: '',
-        //         password2: '',
-        //     }
-        
-        // let errors = []
-
-        // function showToast() {
-        //     toastStore.showToast('This is a success message', 'success');
-        //     console.log('Click')
-        // }
-
-        // function submitForm() {
-        //     errors = []
-
-        //     if (form.email === '') {
-        //         errors.push('Your email is missing')
-        //     }
-
-        //     if (form.name === '') {
-        //         errors.push('Your name is missing')
-        //     }
-
-        //     if (form.password1 === '') {
-        //         errors.push('Your password is missing')
-        //     }
-
-        //     if (form.password1 !== form.password2) {
-        //         errors.push('The password does not match')
-        //     }
-
-        //     if (errors.length === 0) {
-        //         axios
-        //         .post('/api/signup/', form)
-        //         .then(response => {
-        //             console.log(response.data)
-        //             if (response.data.message === 'success') {
-        //                 toastStore.showToast('The user is registered. Please log in', 'bg-emerald-green')
-
-        //                 form = {
-        //                     email: '',
-        //                     name: '',
-        //                     password1: '',
-        //                     password2: ''
-        //                 }
-        //             } else {
-        //                 toastStore.showToast('Something went wrong. Please try again', 'bg-red-300')
-        //             }
-        //         })
-        //         .catch(error => {
-        //             console.log('error', error)
-        //         })
-        //     }
-        // }
-
-        // return{
-        //     toastStore,
-        //     // form,
-        //     // errors,
-        //     // submitForm,
-        //     showToast,
-        // }
-    // },
+<template>
+    <div class="signup-form">
+      <h2>Signup</h2>
+      <form @submit.prevent="signup">
+        <div>
+          <label>Name</label>
+          <input type="text" v-model="name" />
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" v-model="password" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" v-model="email" />
+        </div>
+        <input type="submit" value="Signup" />
+      </form>
+    </div>
+  </template>
+  
+  <script>
+  import axios from "axios";
+  import { ref } from "vue";
+  
+  export default {
+    setup() {
+      const name = ref("");
+      const password = ref("");
+      const email = ref("");
+  
+      const signup = async () => {
+        await axios
+            .post("/api/signup/", {
+                'name': name.value,
+                'password': password.value,
+                'email': email.value,
+            })
+            .then (response => {
+                console.log('data', response.data);
+            })
+            .catch (error => {
+                console.log(error);
+            })
+        };
+  
+      return {
+        name,
+        password,
+        email,
+        signup,
+      };
+    },
+  };
+  </script>
+  
+  <style>
+  .signup-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .signup-form h2 {
+    margin-bottom: 20px;
+  }
+  
+  .signup-form label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .signup-form input[type="text"],
+  .signup-form input[type="password"],
+  .signup-form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  .signup-form input[type="submit"] {
+    background-color: #4caf50;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .signup-form input[type="submit"]:hover {
+    background-color: #3e8e41;
+  }
+  </style>

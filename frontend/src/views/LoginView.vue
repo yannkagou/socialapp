@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="max-w-7xl mx-auto grid grid-cols-2 gap-4">
       <div class="main-left">
           <div class="p-12 bg-white border border-gray-2oo rounded-lg">
@@ -36,9 +36,9 @@
           </div>
       </div>
     </div>
-</template> 
+</template>  -->
 
-<script setup>
+<!-- <script setup>
 import axios from 'axios';
 import { useUserStore } from '@/stores/user'
 import { reactive, ref } from 'vue';
@@ -91,4 +91,47 @@ import { useRouter } from 'vue-router';
         }
     }
 
-</script>
+</script> -->
+
+<template>
+    <div class="App">
+      <form @submit.prevent="login">
+        <div>
+          <label>Name</label>
+          <input type="text" v-model="form.email" />
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" v-model="form.password" />
+        </div>
+        <input type="submit" value="Login" />
+      </form>
+    </div>
+  </template>
+  
+  <script setup>
+  import axios from "axios";
+  import { reactive } from "vue";
+  
+    let form = reactive ({
+        email: "",
+        password: "",
+    });
+
+    const login = async () => {
+        await axios
+                .post("/api/login/", form)
+                .then(response => {
+                    console.log(response.data);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                })
+            // { withCredentials: true }
+        };
+
+  </script>
+  
+  <style>
+  /* Add any necessary styles here */
+  </style>
