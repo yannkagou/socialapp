@@ -48,65 +48,52 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
-    import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
-    import Trends from '../components/Trends.vue';
-    import axios from 'axios';
-    import { useUserStore } from '@/stores/user'
+import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
+import Trends from '../components/Trends.vue';
+import axios from 'axios';
+import { useUserStore } from '@/stores/user'
+import { onMounted, reactive, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
-    export default {
-        name: "FriendsView",
 
-        setup() {
-            const userStore = useUserStore()
-            return {
-                userStore,
-            }
-        },
+    const userStore = useUserStore()
+    const route = useRoute()
 
-        components:{
-            PeopleYouMayKnow,
-            Trends,
-        },
+    let user = reactive({});
+    let friendshipRequests = ref([]);
+    let friends = ref([]);
 
-        data(){
-            return{
-                user:{},
-                friendshipRequests: [],
-                friends: [],
-            }
-        },
+    onMounted(() => {
+        getFriends();
+    });
 
-        mounted(){
-            this.getFriends()
-        },
+       
+    function getFriends() {
+        axios
+            .get(`/api/friends/${route.params.id}/`)
+            .then(response => {
+                console.log('data: ', response.data)
+                friendshipRequests.value = response.data.requests
+                friends.value = response.data.friends
+                user = response.data.user
+            })
+            .catch(error => {
+                console.log('error :', error)
+            })
+    };
 
-        methods:{
-            getFriends(){
-                axios
-                    .get(`/api/friends/${this.$route.params.id}/`)
-                    .then(response => {
-                        console.log('data: ', response.data)
-                        this.friendshipRequests = response.data.requests
-                        this.friends = response.data.friends
-                        this.user = response.data.user
-                    })
-                    .catch(error => {
-                        console.log('error :', error)
-                    })
-            },
-            handleRequest(status, pk){
-                console.log('status: ', status)
-                axios
-                    .post(`/api/friends/${pk}/${status}/`)
-                    .then(response => {
-                        console.log('data: ', response.data)
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
-        }
+    function handleRequest(status, pk) {
+        console.log('status: ', status)
+        axios
+            .post(`/api/friends/${pk}/${status}/`)
+            .then(response => {
+                console.log('data: ', response.data)
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
     }
+
 </script>

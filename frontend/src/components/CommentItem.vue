@@ -21,12 +21,10 @@
     </div>
 </template>
 
-<script>
+<script setup>
+    import { defineProps } from 'vue';
 
-    export default {
-        props: {
-            comment: Object
-        },
-    }
-
+    const props = defineProps({
+        comment: Object
+    });
 </script>

@@ -23,9 +23,9 @@
                       <input v-model="form.password" type="password" placeholder="Your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
                   </div>
 
-                  <template v-if="errors.length > 0">
+                  <template v-if="formErrors.length > 0">
                         <div class="bg-red-300 text-white rounded-lg p-6">
-                            <p v-for="error in errors" :key="error">{{ error }}</p>
+                            <p v-for="error in formErrors" :key="error">{{ error }}</p>
                         </div>
                     </template>
 
@@ -38,65 +38,57 @@
     </div>
 </template> 
 
-<script>
+<script setup>
 import axios from 'axios';
 import { useUserStore } from '@/stores/user'
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-export default {
-    setup(){
-        const userStore = useUserStore()
+    const userStore = useUserStore();
+    const router = useRouter();
 
-        return{
-            userStore
+    let form = reactive ({
+        email: '',
+        password: '',
+    });
+
+    let formErrors = ref([]);
+
+    const submitForm = async () => {
+        formErrors.value = []
+
+        if (form.email === ''){
+            formErrors.value.push('Your email is missing')
         }
-    },
-    data() {
-        return {
-            form: {
-                email: '',
-                password: '',
-            },
-            errors: [],
+
+        if (form.password === ''){
+            formErrors.value.push('Your password is missing')
         }
-    },
-    methods: {
-        async submitForm(){
-            this.errors = []
 
-            if (this.form.email === ''){
-                this.errors.push('Your email is missing')
-            }
+        if (formErrors.value === 0){
+            await axios
+                .post('/api/login/', form)
+                .then(response => {
+                userStore.setToken(response.data)
 
-            if (this.form.password === ''){
-                this.errors.push('Your password is missing')
-            }
-
-            if (this.errors.length === 0){
-                await axios
-                    .post('/api/login/', this.form)
-                    .then(response => {
-                    this.userStore.setToken(response.data)
-
-                    axios.defaults.headers.common["Authorization"] = "Bearer " + response.data.access;
-                    })
-                    .catch((error) => {
-                    console.log(error)
-                    })
-            }
-            if (this.errors.length === 0){
-                await axios
-                    .get('/api/meinfo/')
-                    .then(response => {
-                        console.log('api/me', response.data)
-                        this.userStore.setUserInfo(response.data)
-                        this.$router.push('/feed')
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
+                axios.defaults.headers.common["Authorization"] = "Bearer " + response.data.access;
+                })
+                .catch((error) => {
+                console.log(error)
+                })
+        }
+        if (formErrors.value === 0){
+            await axios
+                .get('/api/meinfo/')
+                .then(response => {
+                    console.log('api/me', response.data)
+                    userStore.setUserInfo(response.data)
+                    router.push('/feed')
+                })
+                .catch(error => {
+                    console.log('error', error)
+                })
         }
     }
-}
 
 </script>

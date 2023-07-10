@@ -18,56 +18,47 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
-    import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
-    import Trends from '../components/Trends.vue';
-    import FeedItem from '../components/FeedItem.vue';
-    import axios from 'axios';
+import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
+import Trends from '../components/Trends.vue';
+import FeedItem from '../components/FeedItem.vue';
+import axios from 'axios';
+import { ref, onMounted } from 'vue';
 
-    export default {
-        name: "FeedView",
 
-        components:{
-            PeopleYouMayKnow,
-            Trends,
-            FeedItem,
-        },
-        data(){
-            return{
-                posts: [],
-                body: '',
-            }
-        },
-        mounted(){
-            this.getFeeds()
-        },
-        methods:{
-            getFeeds(){
-                axios
-                    .get('/api/posts/')
-                    .then(response => {
-                        console.log('data: ', response.data)
-                        this.posts = response.data
-                    })
-                    .catch(error => {
-                        console.log('error :', error)
-                    })
-            },
-            submitForm(){
-                console.log("submitForm ", this.body)
-                axios
-                    .post('/api/posts/create/', {
-                        'body': this.body
-                    })
-                    .then(response => {
-                        this.posts.unshift(response.data)
-                        this.body = ''
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            },
-        }
-    }
+    let posts = ref([]);
+    let body = ref('');
+
+    function getFeeds() {
+        axios
+            .get('/api/posts/')
+            .then(response => {
+                console.log('data: ', response.data)
+                posts.value = response.data
+            })
+            .catch(error => {
+                console.log('error :', error)
+            })
+    };
+
+    function submitForm() {
+        console.log("submitForm ", body.value)
+        axios
+            .post('/api/posts/create/', {
+                'body': body.value
+            })
+            .then(response => {
+                posts.unshift(response.data)
+                body.value = ''
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
+    };
+
+    onMounted(() => {
+        getFeeds();
+    });
+
 </script>

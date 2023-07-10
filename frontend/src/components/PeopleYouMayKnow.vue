@@ -18,40 +18,31 @@
     </div>
  </template>
     
-<script>
+<script setup>
 
-    import axios from 'axios'
-    import { useUserStore } from '@/stores/user'
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
+import { onMounted, ref } from 'vue';
 
-    export default {
 
-        setup() {
-            const userStore = useUserStore();
-            return {
-                userStore,
-            };
-        },
+    const userStore = useUserStore();
 
-        data(){
-            return{
-                users: [],
-            }
-        },
-        mounted(){
-            this.getUsers()
-        },
-        methods:{
-            getUsers(){
-                axios
-                    .get('/api/users/')
-                    .then(response => {
-                        console.log('data: ', response.data)
-                        this.users = response.data
-                    })
-                    .catch(error => {
-                        console.log('error :', error)
-                    })
-            },
-        }
-    }
+    let users = ref([]);
+ 
+    onMounted(() => {
+        getUsers();
+    });
+
+    const getUsers = () => {
+        axios
+            .get('/api/users/')
+            .then(response => {
+                console.log('data: ', response.data)
+                users.value = response.data
+            })
+            .catch(error => {
+                console.log('error :', error)
+            })
+    };
+
 </script>

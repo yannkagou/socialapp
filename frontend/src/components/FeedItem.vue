@@ -34,30 +34,29 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
     import axios from 'axios';
 
-    export default {
-        props: {
-            post: Object
-        },
-        methods: {
-            likepost(id){
-                console.log('Likepost', id)
-                axios
-                    .post(`/api/posts/${id}/like/`)
-                    .then(response => {
-                        console.log(response.data)
-                        if (response.data.message == 'Like created'){
-                            this.post.likes_count += 1
-                        } 
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
-        }
+    import { defineProps } from 'vue';
+
+    const props = defineProps({
+        post: Object
+    });
+
+    const likepost = (id) => {
+        console.log('Likepost', id)
+        axios
+            .post(`/api/posts/${id}/like/`)
+            .then(response => {
+                console.log(response.data)
+                if (response.data.message == 'Like created'){
+                    post.likes_count += 1
+                } 
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
     }
 
 </script>

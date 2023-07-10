@@ -15,44 +15,30 @@
     </div>
 </template> 
 
-<script>
-    import axios from 'axios';
-    import { useUserStore } from '@/stores/user'
+<script setup>
+import axios from 'axios';
+import { useUserStore } from '@/stores/user'
+import { ref, onMounted } from 'vue';
 
-    export default {
-        name: 'chat',
+    const userStore = useUserStore();
 
-        setup(){
-            const userStore = useUserStore()
+    let conversations = ref([]);
 
-            return{
-                userStore,
-            }
-        },
+    function getConversations() {
 
-        data(){
-            return{
-                conversations: [],
-            }
-        },
+        axios
+            .get('/api/chat/')
+            .then(response => {
+                console.log('get conversation', response.data)
+                conversations.value = response.data
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
+    };
 
-        mounted(){
-            this.getConversations()
-        },
-        methods: {
-            getConversations(){
-
-                axios
-                    .get('/api/chat/')
-                    .then(response => {
-                        console.log('get conversation', response.data)
-                        this.conversations = response.data
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
-        }
-    }
+    onMounted(() => {
+        getConversations();
+    });
 
 </script>

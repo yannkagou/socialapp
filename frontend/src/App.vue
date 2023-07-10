@@ -72,34 +72,23 @@
   </div>
 </template>
 
-<script>
-    import axios from 'axios'
-    import { useUserStore } from '@/stores/user'
-    import Toast from '@/components/Toast.vue'
+<script setup>
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
+import Toast from '@/components/Toast.vue'
 
-    export default {
-      
-      components: {
-          Toast
-        },
+  const userStore = useUserStore();
 
-      setup() {
-          const userStore = useUserStore();
-          return {
-              userStore
-          };
-      },
-      beforeCreate() {
-          this.userStore.initStore();
-          const token = this.userStore.user.access;
-          if (token) {
-              axios.defaults.headers.common["Authorization"] = "Bearer " + token;
-          }
-          else {
-              axios.defaults.headers.common["Authorization"] = "";
-          }
-      }
-}
+  userStore.initStore();
+  const token = userStore.user.access;
+
+  if (token) {
+      axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+  }
+  else {
+      axios.defaults.headers.common["Authorization"] = "";
+  }
+
 </script>
 
 <style scoped>

@@ -48,106 +48,90 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
-    import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
-    import Trends from '../components/Trends.vue';
-    import FeedItem from '../components/FeedItem.vue';
-    import axios from 'axios';
-    import { useUserStore } from '@/stores/user'
-    import { useToastStore } from '@/stores/toast'
+import PeopleYouMayKnow from '../components/PeopleYouMayKnow.vue';
+import Trends from '../components/Trends.vue';
+import FeedItem from '../components/FeedItem.vue';
+import axios from 'axios';
+import { useUserStore } from '@/stores/user'
+import { useToastStore } from '@/stores/toast'
+import { onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
+    const route = useRoute();
+    const router = useRouter();
+    const userStore = useUserStore();
+    const toastStore = useToastStore();
 
-    export default {
-        name: "ProfileView",
+    let posts = ref([]);
+    let user = reactive ({
+        id: null
+    });
+    let body = ref('');
 
-        setup() {
-            const userStore = useUserStore();
-            const toastStore = useToastStore()
-            return {
-                userStore,
-                toastStore
-            };
-        },
+    const getFeeds = () => {
+        axios
+            .get(`/api/posts/profile/${route.params.id}/`)
+            .then(response => {
+                posts.value = response.data.posts
+                user = response.data.user
+            })
+            .catch(error => {
+                console.log('error :', error)
+            })
+    };
 
-        components:{
-            PeopleYouMayKnow,
-            Trends,
-            FeedItem,
-        },
+    const submitForm = () => {
+        console.log("submitForm ", body.value)
+        axios
+            .post('/api/posts/create/', {
+                'body': body.value
+            })
+            .then(response => {
+                // console.log('data', response.data)
+                posts.unshift(response.data)
+                body.value = ''
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
+    };
 
-        data(){
-            return{
-                posts: [],
-                user: {
-                    id: null
-                },
-                body: '',
-            }
-        },
+    onMounted(() => {
+        getFeeds();
+    });
 
-        mounted(){
-            this.getFeeds()
-        },
+    watch(
+    () => route.params.id,
+    () => {
+        getFeeds();
+    },
+    { deep: true }
+    );
 
-        watch: { 
-            '$route.params.id': {
-                handler: function() {
-                    this.getFeeds()
-                },
-                deep: true,
-                immediate: true
-            }
-        },
+        
+    function sendFriendshipRequest(){
+        axios
+            .post(`/api/friends/${route.params.id}/request/`)
+            .then(response => {
+                console.log('data: ', response.data)
+                if (response.data.message == 'friendship request already sent'){
+                    toastStore.showToast('The request has already been sent!')
+                }else{
+                    toastStore.showToast('The request was sent!')
+                }
+            })
+            .catch(error => {
+                console.log('error', error)
+            })
+    };
 
-        methods:{
-            getFeeds(){
-                axios
-                    .get(`/api/posts/profile/${this.$route.params.id}/`)
-                    .then(response => {
-                        this.posts = response.data.posts
-                        this.user = response.data.user
-                    })
-                    .catch(error => {
-                        console.log('error :', error)
-                    })
-            },
-            sendFriendshipRequest(){
-                axios
-                    .post(`/api/friends/${this.$route.params.id}/request/`)
-                    .then(response => {
-                        console.log('data: ', response.data)
-                        if (response.data.message == 'friendship request already sent'){
-                            this.toastStore.showToast(5000, 'The request has already been sent!', 'bg-red-300')
-                        }else{
-                            this.toastStore.showToast(5000, 'The request was sent!', 'bg-emerald-300')
-                        }
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            },
-            logout(){
-                console.log('logout')
+    function logout(){
+        console.log('logout')
 
-                this.userStore.removeToken()
-                this.$router.push('/login')
-            },
-            submitForm(){
-                console.log("submitForm ", this.body)
-                axios
-                    .post('/api/posts/create/', {
-                        'body': this.body
-                    })
-                    .then(response => {
-                        // console.log('data', response.data)
-                        this.posts.unshift(response.data)
-                        this.body = ''
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            },
-        }
-    }
+        userStore.removeToken()
+        router.push('/login')
+    };
+
 </script>

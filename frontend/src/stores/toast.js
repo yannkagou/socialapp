@@ -3,30 +3,20 @@ import { defineStore } from 'pinia'
 export const useToastStore = defineStore({
     id: 'toast',
     state: () => ({
-        ms: 0,
+        type: '',
         message:'',
-        classes: '',
         isVisible: false
     }),
 
     actions: {
-        showToast(ms, message, classes){
-            this.ms = parseInt(ms)
+        showToast(message, type = 'success'){
             this.message = message
-            this.classes = classes
+            this.type = type
             this.isVisible = true
 
             setTimeout(() => {
-                this.classes += '-translate-y-28'
-            }, 100)
-
-            setTimeout(() => {
-                this.classes = this.classes.replace('-translate-y-28', '')
-            }, this.ms - 500)
-
-            setTimeout(() => {
-                this.isVisible = false
-            }, this.ms)
+                useToastStore.isVisible = false
+            }, 2000)
         }
     }
 })

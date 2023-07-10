@@ -31,9 +31,9 @@
                         <input v-model="password2" type="password" placeholder="Repeat your password" class="w-full mt-2 px-6 border border-gray-200 rounded-lg">
                     </div>
 
-                    <template v-if="errors.length > 0">
+                    <template v-if="formErrors.length > 0">
                         <div class="bg-red-300 text-white rounded-lg p-6">
-                            <p v-for="error in errors" :key="error">{{ error }}</p>
+                            <p v-for="error in formErrors" :key="error">{{ error }}</p>
                         </div>
                     </template>
 
@@ -51,116 +51,102 @@
   </template> 
 
 
-<script>
+<script setup>
 import axios from 'axios';
 import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '@/stores/user'
 import Yann from '../components/Yann.vue';
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-export default{
 
-    components:{
-            Yann,
-        },
+    const toastStore = useToastStore();
+    const userStore = useUserStore();
+    const router = useRouter();
 
-    setup(){
-        const toastStore = useToastStore()
-        const userStore = useUserStore()
+    let form = reactive ({
+        email: '',
+        name: '',
+        password: '',
+    });
+    let password2 = ref('');
+    let formErrors = ref([]);
+    let isLoading = ref(false);
+    let logform = reactive ({
+        email: '',
+        password: '',
+    });
 
-        return {
-            toastStore,
-            userStore,
+
+
+    const submitForm = async () => {
+        formErrors.value = []
+
+        if (form.email === '') {
+            formErrors.value.push('Your e-mail is missing')
         }
-    },
 
-    data(){
-        return {
-            form: {
-                email: '',
-                name: '',
-                password: '',
-            },
-            password2: '',
-            errors: [],
-            isLoading: false,
-            logform: {
-                email: '',
-                password: '',
-            },
+        if (form.name === '') {
+            formErrors.value.push('Your name is missing')
         }
-    },
 
-    methods: {
-        async submitForm() {
-            this.errors = []
-
-            if (this.form.email === '') {
-                this.errors.push('Your e-mail is missing')
-            }
-
-            if (this.form.name === '') {
-                this.errors.push('Your name is missing')
-            }
-
-            if (this.form.password === '') {
-                this.errors.push('Your password is missing')
-            }
-
-            if (this.form.password !== this.password2) {
-                this.errors.push('The password does not match')
-            }
-
-            if (this.errors.length === 0) {
-                await axios
-                    .post('/api/signup/', this.form)
-                    .then(response => {
-                        console.log(response.data)
-                            this.toastStore.showToast(5000, 'The user is registered. Please activate your account by clicking your email link.', 'bg-emerald-300')
-                            this.isLoading = true;
-
-                            this.form.name = ''
-                            this.password2 = ''
-
-                            this.logform.email = this.form.email
-                            this.logform.password = this.form.password
-                        })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
-
-            if (this.errors.length === 0) {
-
-                await axios
-                    .post('/api/login/', this.logform)
-                    .then(response => {
-                    this.userStore.setToken(response.data)
-
-                    axios.defaults.headers.common["Authorization"] = "Bearer " + response.data.access;
-                    })
-                    .catch((error) => {
-                    console.log(error)
-                    })
-            }
-            if (this.errors.length === 0){
-                await axios
-                    .get('/api/meinfo/')
-                    .then(response => {
-                        console.log('api/me', response.data)
-                        this.userStore.setUserInfo(response.data)
-                        this.form.email = '',
-                        this.form.password = '',
-                        this.$router.push('/feed')
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                    })
-            }
+        if (form.password === '') {
+            formErrors.value.push('Your password is missing')
         }
-  }
 
-    
-}
+        if (form.password !== password2.value) {
+            formErrors.value.push('The password does not match')
+        }
+
+        if (formErrors.value.length === 0) {
+            await axios
+                .post('/api/signup/', form)
+                .then(response => {
+                    console.log(response.data)
+                        toastStore.showToast('The user is registered. Please activate your account by clicking your email link.')
+                        isLoading = true;
+
+                        form.name = ''
+                        password2.value = ''
+
+                        logform.email = form.email
+                        logform.password = form.password
+                    })
+                .catch(error => {
+                    console.log('error', error)
+                })
+        }
+
+        if (formErrors.value.length === 0) {
+
+            await axios
+                .post('/api/login/', logform)
+                .then(response => {
+                userStore.setToken(response.data)
+
+                axios.defaults.headers.common["Authorization"] = "Bearer " + response.data.access;
+                })
+                .catch((error) => {
+                console.log(error)
+                })
+        }
+        if (formErrors.value.length === 0){
+            await axios
+                .get('/api/meinfo/')
+                .then(response => {
+                    console.log('api/me', response.data)
+                    userStore.setUserInfo(response.data)
+                    form.email = '',
+                    form.password = '',
+                    router.push('/feed')
+                })
+                .catch(error => {
+                    console.log('error', error)
+                })
+        }
+    }
+
+
 </script>
 
 // setup(){

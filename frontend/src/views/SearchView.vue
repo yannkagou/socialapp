@@ -43,49 +43,34 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
     
-    import Trends from "../components/Trends.vue";
-    import PeopleYouMayKnow from "../components/PeopleYouMayKnow.vue";
-    import FeedItem from  "../components/FeedItem.vue";
-    import axios from 'axios';
+import Trends from "../components/Trends.vue";
+import PeopleYouMayKnow from "../components/PeopleYouMayKnow.vue";
+import FeedItem from  "../components/FeedItem.vue";
+import axios from 'axios';
+import { ref } from "vue";
 
-    export default {
-        name: 'SearchView',
+    let query = ref("");
+    let users = ref([]);
+    let posts = ref([]);
 
-        components:{
-            PeopleYouMayKnow,
-            Trends,
-            FeedItem,
-        },
+    const submitForm = () => {
+        console.log('submitForm', query.value)
 
-        data(){
-            return {
-                query: "",
-                users: [],
-                posts: []
-            }
-        }, 
-        methods: {
-            submitForm(){
-                console.log('submitForm', this.query)
-
-                axios
-                    .post('/api/search/', {
-                        query: this.query
-                    })
-                    .then (response => {
-                        console.log ('response: ', response.data)
-                        this.users = response.data.users;
-                        this.posts = response.data.posts;
-                    })
-                    .catch (error => {
-                        console.log('error', error)
-                    })
-            }
-        }
+        axios
+            .post('/api/search/', {
+                query: query.value
+            })
+            .then (response => {
+                console.log ('response: ', response.data)
+                users.value = response.data.users;
+                posts.value = response.data.posts;
+            })
+            .catch (error => {
+                console.log('error', error)
+            })
     }
-
 
 </script>
