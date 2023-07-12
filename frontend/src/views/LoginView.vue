@@ -112,7 +112,11 @@ import { useRouter } from 'vue-router';
   <script setup>
   import axios from "axios";
   import { reactive } from "vue";
+  import { useRouter } from "vue-router";
+  import { useCookies } from "vue3-cookies";
   
+    const router = useRouter();
+    const { cookies } = useCookies();
     let form = reactive ({
         email: "",
         password: "",
@@ -120,14 +124,15 @@ import { useRouter } from 'vue-router';
 
     const login = async () => {
         await axios
-                .post("/api/login/", form)
+                .post('/api/login/', form, { withCredentials: true })
                 .then(response => {
                     console.log(response.data);
+                    cookies.set("cookieName","cookieValue");
+                    router.push('/user')
                 })
                 .catch(error => {
                     console.log('error', error)
                 })
-            // { withCredentials: true }
         };
 
   </script>

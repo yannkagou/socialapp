@@ -74,7 +74,7 @@ def post_create_comment(request, pk):
     
     post = Post.objects.get(pk=pk)
     post.comments.add(comment)
-    # post.comments_count = post.comments_count + 1
+    post.comments_count = post.comments_count + 1
     post.save()
     
     serializer = CommentSerializer(comment)
