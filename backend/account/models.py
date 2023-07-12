@@ -1,10 +1,14 @@
-import uuid
+# import uuid
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
+# from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.utils import timezone
 
 
-class CustomUserManager(UserManager):
+from enum import unique
+from django.db import models
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+
+class CustomUserManager(BaseUserManager):
     def _create_user(self, name, email, password, **extra_fields):
         """
         Create and save a user with the given name, email, and password.
@@ -29,27 +33,39 @@ class CustomUserManager(UserManager):
         extra_fields.setdefault("is_superuser", True)
 
         return self._create_user(name, email, password, **extra_fields)
-    
-class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField(unique=True)
+
+
+class User(AbstractBaseUser):
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(null=False, blank=False, unique=True)
     name = models.CharField(max_length=255, blank=True, default='', null=True)
     avatar = models.ImageField(upload_to='avatars', null=True, blank=True)
     friends = models.ManyToManyField("self")
     friend_count = models.IntegerField(default=0) 
     
     is_active = models.BooleanField(default=True)
-    is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
     
+    is_superuser = models.BooleanField(default=False)
+
     objects = CustomUserManager()
-    
+
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = []
+
+
+    def __str__(self):
+        return self.name
+
+    def has_perm(self, perm, obj=None):
+         return True
+
+    def has_module_perms(self, app_label):
+        return True
     
 class FriendshipRequest(models.Model):
     SENT = 'send'
@@ -62,7 +78,7 @@ class FriendshipRequest(models.Model):
         (REJECTED, 'rejected'),
     }
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_for = models.ForeignKey(User, related_name='received_friendshiprequests', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User,related_name='create_friendshiprequests', on_delete=models.CASCADE)
