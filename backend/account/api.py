@@ -1,141 +1,80 @@
-from django.http import JsonResponse
+# from .forms import SignupForm
+from django.conf import settings
+import jwt
 from .models import FriendshipRequest, User
 from .serializers import UserSerializer, FriendshipRequestSerializer
-
-from django.conf import settings
-from django.contrib.auth import authenticate
-from django.conf import settings
-from django.middleware import csrf
-from rest_framework import exceptions as rest_exceptions, response, decorators as rest_decorators, permissions as rest_permissions
-from rest_framework_simplejwt import tokens, views as jwt_views, serializers as jwt_serializers, exceptions as jwt_exceptions
-from account import serializers, models
-
-
-def get_user_tokens(user):
-    refresh = tokens.RefreshToken.for_user(user)
-    return {
-        "refresh_token": str(refresh),
-        "access_token": str(refresh.access_token)
-    }
+from django.shortcuts import render
+from django.db.models import Q
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny
+from rest_framework import exceptions, status
+from rest_framework.response import Response
+from .authenticate import generate_access_token, JWTauthentication
 
 
-@rest_decorators.api_view(["POST"])
-@rest_decorators.permission_classes([])
-def loginView(request):
-    serializer = serializers.LoginSerializer(data=request.data)
+@api_view(['POST'])
+def register_view(request, *args, **kwargs):
+    data = request.data
+    if data['password'] != data['password_confirm']:
+        raise exceptions.APIException("Password Does not match")
+
+    serializer = UserSerializer(data=data)
     serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response(serializer.data)
 
-    email = serializer.validated_data["email"]
-    password = serializer.validated_data["password"]
+@api_view(["POST"])
+def login_view(request, *args, **kwargs):
+    if request.user.is_authenticated:
+        return Response({'Message': 'You are already logged in ...'}, status=400)
+    email = request.data.get("email")
+    password = request.data.get("password")
 
-    user = authenticate(email=email, password=password)
+    user = (
+        User.objects.filter(Q(email__iexact=email)
+                            | Q(password__iexact=password))
+        .distinct()
+        .first()
+    )
 
-    if user is not None:
-        tokens = get_user_tokens(user)
-        res = response.Response()
-        res.set_cookie(
-            key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-            value=tokens["access_token"],
-            expires=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
-            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
-        )
+    if user is None:
+        raise exceptions.AuthenticationFailed("user not found")
 
-        res.set_cookie(
-            key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
-            value=tokens["refresh_token"],
-            expires=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
-            secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-            samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
-        )
+    if not user.check_password(password):
+        raise exceptions.AuthenticationFailed("Incorrect password")
 
-        res.data = tokens
-        res["X-CSRFToken"] = csrf.get_token(request)
-        return res
-    raise rest_exceptions.AuthenticationFailed(
-        "Email or Password is incorrect!")
+    response = Response()
+    token = generate_access_token(user)
+    response.set_cookie(key="jwt", value=token, httponly=True)
+    response.data = {"jwt": token}
+    return response
 
 
-@rest_decorators.api_view(["POST"])
-@rest_decorators.permission_classes([])
-def registerView(request):
-    serializer = serializers.RegistrationSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+@api_view(["POST"])
+def logout_view(request):
+    response = Response()
+    response.delete_cookie(key="jwt")
+    response.data = {"message": "success logout"}
+    return response
 
-    user = serializer.save()
-
-    if user is not None:
-        return response.Response("Registered!")
-    return rest_exceptions.AuthenticationFailed("Invalid credentials!")
-
-
-@rest_decorators.api_view(['POST'])
-@rest_decorators.permission_classes([rest_permissions.IsAuthenticated])
-def logoutView(request):
+@api_view(["GET"])
+def user_detail(request):
+    token = request.COOKIES.get('jwt')
+    
+    if not token:
+        raise exceptions.AuthenticationFailed('Unauthentivated')
+    
     try:
-        refreshToken = request.COOKIES.get(
-            settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
-        token = tokens.RefreshToken(refreshToken)
-        token.blacklist()
-
-        res = response.Response()
-        res.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
-        res.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
-        res.delete_cookie("X-CSRFToken")
-        res.delete_cookie("csrftoken")
-        res["X-CSRFToken"]=None
-        
-        return res
-    except:
-        raise rest_exceptions.ParseError("Invalid token")
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        raise exceptions.AuthenticationFailed('Unauthentivated')
+    
+    user = User.objects.filter(id=payload['user_id']).first() 
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
 
 
-class CookieTokenRefreshSerializer(jwt_serializers.TokenRefreshSerializer):
-    refresh = None
-
-    def validate(self, attrs):
-        attrs['refresh'] = self.context['request'].COOKIES.get('refresh')
-        if attrs['refresh']:
-            return super().validate(attrs)
-        else:
-            raise jwt_exceptions.InvalidToken(
-                'No valid token found in cookie \'refresh\'')
-
-
-class CookieTokenRefreshView(jwt_views.TokenRefreshView):
-    serializer_class = CookieTokenRefreshSerializer
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        if response.data.get("refresh"):
-            response.set_cookie(
-                key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
-                value=response.data['refresh'],
-                expires=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
-                secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
-            )
-
-            del response.data["refresh"]
-        response["X-CSRFToken"] = request.COOKIES.get("csrftoken")
-        return super().finalize_response(request, response, *args, **kwargs)
-
-
-@rest_decorators.api_view(["GET"])
-@rest_decorators.permission_classes([rest_permissions.IsAuthenticated])
-def user(request):
-    try:
-        user = models.User.objects.get(id=request.user.id)
-    except models.User.DoesNotExist:
-        return response.Response(status_code=404)
-
-    serializer = serializers.UserSerializer(user)
-    return response.Response(serializer.data)
-
-
-@rest_decorators.api_view(['GET'])
+@api_view(['GET'])
 def friends(request, pk):
     user = User.objects.get(pk=pk)
     requests = []
@@ -147,14 +86,14 @@ def friends(request, pk):
         
     friends = user.friends.all()
     
-    return JsonResponse({
+    return Response({
         'user': UserSerializer(user).data,
         'friends': UserSerializer(friends, many=True).data,
         'requests': requests,
-    }, safe=False)
+    })
     
 
-@rest_decorators.api_view(['POST'])
+@api_view(['POST'])
 def send_friend_request(request, pk):
     user = User.objects.get(pk=pk)
     
@@ -163,11 +102,11 @@ def send_friend_request(request, pk):
     
     if not check1 and not check2:
         FriendshipRequest.objects.create(created_for=user, created_by=request.user)
-        return JsonResponse({'message': 'friendship request created'})
+        return Response({'message': 'friendship request created'})
     else:
-        return JsonResponse({'message': 'friendship request already sent'})
+        return Response({'message': 'friendship request already sent'})
 
-@rest_decorators.api_view(['POST'])
+@api_view(['POST'])
 def handle_request(request, status, pk):
     user = User.objects.get(pk=pk)
     friendship_request = FriendshipRequest.objects.filter(created_for=request.user).get(created_by=user)
@@ -182,11 +121,11 @@ def handle_request(request, status, pk):
     request_user.friend_count = request_user.friend_count + 1
     request_user.save()
     
-    return JsonResponse({'message': 'friendship request updated'})
+    return Response({'message': 'friendship request updated'})
 
-@rest_decorators.api_view(['GET'])
+@api_view(['GET'])
 def user_list(request):
     users = User.objects.all()
     serializer = UserSerializer(users, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    return Response(serializer.data)
     

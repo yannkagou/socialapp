@@ -4,13 +4,10 @@ from . import api
 
 
 urlpatterns = [
-    # path('meinfo/', api.meinfo, name='me'),
-    path('signup/', api.registerView, name='signup'),
-    path('login/', api.loginView, name='login'),
-    path('refresh/', api.CookieTokenRefreshView.as_view()),
-    path('logout/', api.logoutView),
-    path("user/", api.user),
-    # path('user/', api.user_view, name='user'),
+    path('signup/', api.register_view, name="register"),
+    path('login/', api.login_view, name="login"),
+    path('user/', api.user_detail, name='user'),
+    path('logout/', api.logout_view, name="logout"),
     path('users/', api.user_list, name='user_list'),
     path('friends/<uuid:pk>/', api.friends, name='friends'), 
     path('friends/<uuid:pk>/request/', api.send_friend_request, name='send_friendship_request'),
