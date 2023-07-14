@@ -31,9 +31,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True # to accept cookies via ajax request
 
-CORS_ORIGIN_WHITELIST = [
-    'http://localhost:8000' # the domain for front-end app(you can add more than 1) 
-]
+# CORS_ORIGIN_WHITELIST = [
+#     'http://localhost:8000' # the domain for front-end app(you can add more than 1) 
+# ]
 
 
 # Application definition

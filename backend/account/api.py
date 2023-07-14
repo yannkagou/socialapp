@@ -62,7 +62,7 @@ def user_detail(request):
     token = request.COOKIES.get('jwt')
     
     if not token:
-        raise exceptions.AuthenticationFailed('Unauthentivated')
+        raise exceptions.AuthenticationFailed('Unauthenticated')
     
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
